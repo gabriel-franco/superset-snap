@@ -1,0 +1,65 @@
+name: superset-snap
+base: core24
+version: '0.1'
+summary: Apache Superset snap (mínimo)
+description: |
+  Snap mínimo que empaqueta Apache Superset usando el plugin de Python.
+
+grade: devel
+confinement: devmode
+platforms:
+  amd64:
+
+parts:
+  superset:
+    plugin: python
+    source: .
+    python-packages:
+      - apache_superset==5.0.0
+      - gevent
+      - marshmallow==3.26.1
+      - Pillow
+      - impyla
+      - PyMySQL
+      - psycopg2-binary
+      - python-graphql-client
+    build-packages:
+      - build-essential
+      - libssl-dev
+      - libffi-dev
+      - python3-dev
+      - python3-pip
+      - libsasl2-dev
+      - libldap2-dev
+      - pkg-config
+      - libjpeg-dev
+      - zlib1g-dev
+
+  scripts:
+    plugin: dump
+    source: local/
+    organize:
+      'bin/*': bin/
+
+apps:
+  superset:
+    command: bin/superset
+    environment:
+      SUPERSET_HOME: "$SNAP_COMMON/superset_home"
+      SUPERSET_CONFIG_PATH: "$SNAP_COMMON/superset_home/superset_config.py"
+      FLASK_APP: "superset"
+    plugs:
+      - network
+
+  superset-gunicorn:
+    command: bin/superset-gunicorn
+    daemon: simple
+    restart-condition: on-failure
+    install-mode: disable
+    environment:
+      SUPERSET_HOME: "$SNAP_COMMON/superset_home"
+      SUPERSET_CONFIG_PATH: "$SNAP_COMMON/superset_home/superset_config.py"
+      FLASK_APP: "superset"
+    plugs:
+      - network
+      - network-bind

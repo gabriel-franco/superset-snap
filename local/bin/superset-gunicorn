@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+SUPERSET_HOME="${SUPERSET_HOME:-$SNAP_COMMON/superset_home}"
+SUPERSET_CONFIG_PATH="${SUPERSET_CONFIG_PATH:-$SUPERSET_HOME/superset_config.py}"
+FLASK_APP="superset"
+
+mkdir -p "$SUPERSET_HOME"
+
+if [ ! -f "$SUPERSET_CONFIG_PATH" ]; then
+  echo '# Config básico para Superset en snap' >> "$SUPERSET_CONFIG_PATH"
+  echo '# IMPORTANTE: edita SECRET_KEY en producción' >> "$SUPERSET_CONFIG_PATH"
+  echo 'SECRET_KEY = "cambia_esto"' >> "$SUPERSET_CONFIG_PATH"
+  echo '# Ejemplo: BD sqlite en el home de superset' >> "$SUPERSET_CONFIG_PATH"
+  echo 'import os' >> "$SUPERSET_CONFIG_PATH"
+  echo 'SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(os.environ.get("SUPERSET_HOME", "."), "superset.db")' >> "$SUPERSET_CONFIG_PATH"
+fi
+
+exec "$SNAP/bin/gunicorn" \
+  -b 0.0.0.0:8088 \
+  --workers 4 \
+  --timeout 120 \
+  -k gevent \
+  "superset.app:create_app()"
